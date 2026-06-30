@@ -52,3 +52,17 @@ export const verification = pgTable('verification', {
   createdAt: timestamp('createdAt').defaultNow(),
   updatedAt: timestamp('updatedAt').defaultNow(),
 })
+
+// --- App tables ------------------------------------------------------------
+// Scoped per user via `userId` (no RLS on Neon, so every query filters by it).
+
+export const whatsappNumber = pgTable('whatsapp_number', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull().unique(),
+  phoneNumber: text('phoneNumber').notNull(),
+  displayName: text('displayName'),
+  status: text('status').notNull().default('pending'),
+  verificationCode: text('verificationCode'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+})

@@ -3,6 +3,8 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { SignOutButton } from '@/components/sign-out-button'
+import { WhatsappConnect } from '@/components/whatsapp-connect'
+import { getWhatsappNumber } from '@/app/actions/whatsapp'
 
 type RoadmapStep = {
   title: string
@@ -10,28 +12,30 @@ type RoadmapStep = {
   status: 'done' | 'next' | 'todo'
 }
 
-const roadmap: RoadmapStep[] = [
-  {
-    title: 'Cadastro e login',
-    description: 'Conta com e-mail e senha, sessão persistida no banco.',
-    status: 'done',
-  },
-  {
-    title: 'Conectar número de WhatsApp',
-    description: 'Vincular um número para receber e responder mensagens.',
-    status: 'next',
-  },
-  {
-    title: 'Respostas com IA',
-    description: 'Gerar respostas automáticas para as mensagens recebidas.',
-    status: 'todo',
-  },
-  {
-    title: 'Assinatura (Stripe)',
-    description: 'Cobrança recorrente para liberar os recursos pagos.',
-    status: 'todo',
-  },
-]
+function buildRoadmap(whatsappConnected: boolean): RoadmapStep[] {
+  return [
+    {
+      title: 'Cadastro e login',
+      description: 'Conta com e-mail e senha, sessão persistida no banco.',
+      status: 'done',
+    },
+    {
+      title: 'Conectar número de WhatsApp',
+      description: 'Vincular um número para receber e responder mensagens.',
+      status: whatsappConnected ? 'done' : 'next',
+    },
+    {
+      title: 'Respostas com IA',
+      description: 'Gerar respostas automáticas para as mensagens recebidas.',
+      status: whatsappConnected ? 'next' : 'todo',
+    },
+    {
+      title: 'Assinatura (Stripe)',
+      description: 'Cobrança recorrente para liberar os recursos pagos.',
+      status: 'todo',
+    },
+  ]
+}
 
 const statusLabel: Record<RoadmapStep['status'], string> = {
   done: 'Pronto',
@@ -50,6 +54,8 @@ export default async function DashboardPage() {
   if (!session?.user) redirect('/sign-in')
 
   const { name, email } = session.user
+  const whatsapp = await getWhatsappNumber()
+  const roadmap = buildRoadmap(whatsapp?.status === 'connected')
 
   return (
     <main className="min-h-svh bg-background">
@@ -81,6 +87,19 @@ export default async function DashboardPage() {
             </div>
           </dl>
         </Card>
+
+        <WhatsappConnect
+          record={
+            whatsapp
+              ? {
+                  phoneNumber: whatsapp.phoneNumber,
+                  displayName: whatsapp.displayName,
+                  status: whatsapp.status,
+                  verificationCode: whatsapp.verificationCode,
+                }
+              : null
+          }
+        />
 
         <Card className="p-6">
           <h2 className="text-base font-semibold text-foreground">
